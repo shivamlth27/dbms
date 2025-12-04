@@ -83,5 +83,13 @@ quit
   - **Output parameter**: `n` is set to the number of tuples in the returned vector.
   - **Return**: An empty vector if no key in the range exists in the index.
 
+## Contributors
+
+**Group 7**
+
+- **Shivam** - 12241710
+- **Srijan Mishra** - 12241800
+- **Aditya Prakash** - 12240040
+
 ---
 
