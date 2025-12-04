@@ -67,8 +67,10 @@ private:
     static constexpr uint32_t INVALID_PAGE = 0xFFFFFFFFu;
 
     // capacity settings (computed from PAGE_SIZE)
+    // LeafNode size ~= 16 + LEAF_MAX_KEYS * (sizeof(int32_t) + VALUE_SIZE)
+    // For VALUE_SIZE = 100 and PAGE_SIZE = 4096, LEAF_MAX_KEYS = 39 fits safely.
     static constexpr uint32_t INTERNAL_MAX_KEYS = 128;
-    static constexpr uint32_t LEAF_MAX_KEYS = 30;
+    static constexpr uint32_t LEAF_MAX_KEYS = 39;
 
     struct InternalNode {
         NodeHeader hdr;

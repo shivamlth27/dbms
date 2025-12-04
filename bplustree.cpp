@@ -295,7 +295,7 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
                                uint32_t leftPage,
                                int32_t key,
                                uint32_t rightPage) {
-    // If leftPage is root, create new root
+    // Case 1: tree was a single leaf and it just split
     if (path.size() == 1 && path[0] == m_header.rootPage) {
         InternalNode root{};
         root.hdr.type = static_cast<uint8_t>(NodeType::INTERNAL);
@@ -311,20 +311,20 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
         return flushHeader();
     }
 
-    // parent is the last internal node in path before leaf
+    // parent is the last internal node in path before the splitting child
     if (path.size() < 2) return false;
     uint32_t parentPage = path[path.size() - 2];
     InternalNode parent{};
     if (!readInternal(parentPage, parent)) return false;
 
-    // find index of leftPage in children
+    // find index of leftPage in parent's children
     uint32_t idxChild = 0;
     while (idxChild <= parent.hdr.numKeys && parent.children[idxChild] != leftPage) {
         ++idxChild;
     }
     if (idxChild > parent.hdr.numKeys) return false;
 
-    // insert key/rightPage after idxChild
+    // Case 2: parent has space, just insert key/rightPage
     if (parent.hdr.numKeys < INTERNAL_MAX_KEYS) {
         for (uint32_t i = parent.hdr.numKeys; i > idxChild; --i) {
             parent.keys[i] = parent.keys[i - 1];
@@ -338,7 +338,7 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
         return writeInternal(parentPage, parent);
     }
 
-    // Split internal node (simplified, no recursive splitting for now)
+    // Case 3: parent is full – split internal node and propagate upwards recursively
     InternalNode newParent{};
     newParent.hdr.type = static_cast<uint8_t>(NodeType::INTERNAL);
     newParent.hdr.numKeys = 0;
@@ -353,6 +353,7 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
         tmpChildren[i] = parent.children[i];
     }
 
+    // insert the new key/child into temporary arrays
     for (uint32_t i = parent.hdr.numKeys; i > idxChild; --i) {
         tmpKeys[i] = tmpKeys[i - 1];
     }
@@ -362,10 +363,11 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
     tmpKeys[idxChild] = key;
     tmpChildren[idxChild + 1] = rightPage;
 
-    uint32_t total = parent.hdr.numKeys + 1;
+    uint32_t total = parent.hdr.numKeys + 1; // total keys in temp
     uint32_t mid = total / 2;
     int32_t midKey = tmpKeys[mid];
 
+    // left (existing parent) keeps first 'mid' keys
     parent.hdr.numKeys = mid;
     for (uint32_t i = 0; i < mid; ++i) {
         parent.keys[i] = tmpKeys[i];
@@ -373,6 +375,7 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
     }
     parent.children[mid] = tmpChildren[mid];
 
+    // right (newParent) gets keys after midKey
     newParent.hdr.numKeys = total - mid - 1;
     for (uint32_t i = 0; i < newParent.hdr.numKeys; ++i) {
         newParent.keys[i] = tmpKeys[mid + 1 + i];
@@ -385,7 +388,7 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
     if (!writeInternal(parentPage, parent)) return false;
     if (!writeInternal(newPage, newParent)) return false;
 
-    // If parent was root, create a new root (recursive split not implemented)
+    // If parent was root, create a new root
     if (parentPage == m_header.rootPage) {
         InternalNode newRoot{};
         newRoot.hdr.type = static_cast<uint8_t>(NodeType::INTERNAL);
@@ -401,10 +404,15 @@ bool BPlusTree::insertInParent(const std::vector<uint32_t> &path,
         return flushHeader();
     }
 
-    // For non-root internal split, a full recursive insert into its parent would be needed.
-    // For simplicity, we stop here (limited height handling).
-    // In most test cases with reasonable order this will still be fine.
-    return true;
+    // Non-root internal split: recursively insert promoted key into grandparent
+    auto it = std::find(path.begin(), path.end(), parentPage);
+    if (it == path.end() || it == path.begin()) {
+        // Should not happen if 'path' is a valid root-to-leaf path
+        return false;
+    }
+
+    std::vector<uint32_t> newPath(path.begin(), std::next(it)); // up to and including parentPage
+    return insertInParent(newPath, parentPage, midKey, newPage);
 }
 
 bool BPlusTree::readData(int32_t key, uint8_t outData[VALUE_SIZE]) {
