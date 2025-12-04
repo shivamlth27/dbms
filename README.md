@@ -21,8 +21,6 @@ This project implements a disk-backed B+ tree index using C++.
   - `g++` supporting C++17
   - `make`
 
-No external libraries are required, so **no `requirements.txt` is needed** for this C++ implementation.
-
 ### Build (Linux-style instructions)
 
 Open a terminal and run:
