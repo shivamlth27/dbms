@@ -1,4 +1,4 @@
-## B+ Tree Index (C++ Implementation)
+## B+ Tree Index : C++ Implementation
 
 This project implements a disk-backed B+ tree index using C++.
 
@@ -64,7 +64,7 @@ get 10
 quit
 ```
 
-### API Documentation (C-style / Linux-style)
+### API Documentation
 
 - **`bool writeData(int32_t key, const uint8_t data[100])`**
   - **Description**: Inserts or updates the tuple associated with `key` in the B+ tree index stored on disk.
@@ -83,9 +83,6 @@ quit
   - **Output parameter**: `n` is set to the number of tuples in the returned vector.
   - **Return**: An empty vector if no key in the range exists in the index.
 
-### Notes
-
-- The index file (`index.dat`) is created if it does not exist.
-- The tree is stored fully on disk; only individual pages are loaded into memory as needed.
+---
 
 
