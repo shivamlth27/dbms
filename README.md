@@ -8,15 +8,16 @@ This project implements a disk-backed B+ tree index using C++.
 - Fixed-size value/tuple of 100 bytes
 - Page size: 4096 bytes
 - File-backed index that persists across runs
-- APIs:
-  - `writeData(key, data)` – insert key and 100-byte tuple
+- On-disk B+ tree with linked leaves and recursive internal splitting
+- Public APIs:
+  - `writeData(key, data)` – insert or update key and 100-byte tuple
   - `deleteData(key)` – delete key
   - `readData(key)` – lookup single key
   - `readRangeData(lowerKey, upperKey, n)` – range query
 
 ### Requirements
 
-- **Standard Ubuntu (or macOS)** with:
+- **Standard Ubuntu** (or similar Linux) with:
   - `g++` supporting C++17
   - `make`
 
@@ -27,7 +28,7 @@ No external libraries are required, so **no `requirements.txt` is needed** for t
 Open a terminal and run:
 
 ```bash
-cd /path/to/assgDBMS
+cd /path/to/group7
 make
 ```
 
@@ -41,7 +42,8 @@ From the same directory:
 ./bpt_driver index.dat
 ```
 
-If `index.dat` does not exist, it will be created. If it exists, the existing index is reused.
+- If `index.dat` does not exist, it will be created as a new empty index file.
+- If `index.dat` already exists, the existing index is opened and reused.
 
 You will get a simple interactive driver with the following commands:
 
@@ -84,5 +86,4 @@ quit
   - **Return**: An empty vector if no key in the range exists in the index.
 
 ---
-
 
